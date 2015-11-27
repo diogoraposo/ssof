@@ -2,8 +2,10 @@ package braindeadanalyzer;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 public class Analyzer {
@@ -14,7 +16,6 @@ public class Analyzer {
 		
 		File patternsfile = new File(System.getProperty("user.dir") + "/src/braindeadanalyzer/patterns");
 		TreeMap<String, Vulnerability> vulns = new TreeMap<String, Vulnerability>();
-		
 		
 		//Read patterns file
 		try (BufferedReader br = new BufferedReader(new FileReader(patternsfile))) {
@@ -40,6 +41,41 @@ public class Analyzer {
 		    	vulns.put(vuln.get_description(), vuln);
 		    	if(DEBUG) System.out.println(vuln.toString());
 		    }
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		String phpfile = args[0];
+		File phpFile = new File(System.getProperty("user.dir") + phpfile);
+		
+		try (BufferedReader br = new BufferedReader(new FileReader(phpFile))) {
+			String line;
+		    while ((line = br.readLine()) != null) {
+		    	for(Entry<String, Vulnerability> v : vulns.entrySet()){
+		    		for(String s: v.getValue().get_entryPoints()){
+		    			if(line.equals(s)){
+		    				v.getValue().set_active(true);
+		    			}
+		    		}
+		    		for(String s: v.getValue().get_sanitFunctions()){
+		    			if(line.equals(s)){
+		    				v.getValue().set_secure(true);
+		    			}
+		    		}
+		    		for(String s: v.getValue().get_sensitiveSinks()){
+		    			if(line.equals(s)){
+		    				if(v.getValue().is_active() && !v.getValue().is_secure()){
+		    					System.out.println("The line: \"" + line + "\" is NOT SECURE.");
+		    				}
+		    			}
+		    		}
+		    	}
+		    }
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
