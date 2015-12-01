@@ -12,9 +12,10 @@ public class Analyzer {
 
 	public static void main(String[] args) {
 		
-		boolean DEBUG = true;
+		boolean DEBUG = false;
 		
 		File patternsfile = new File(System.getProperty("user.dir") + "/src/braindeadanalyzer/patterns");
+		//File patternsfile = new File(System.getProperty("user.dir") + "/../src/braindeadanalyzer/patterns");
 		TreeMap<String, Vulnerability> vulns = new TreeMap<String, Vulnerability>();
 		
 		//Read patterns file
@@ -64,9 +65,9 @@ public class Analyzer {
 		    			}
 		    		}
 		    		for(String s: v.getValue().get_sensitiveSinks()){
-		    			if(line.contains(s)){
+		    			if(line.contains(" " +  s + " ")){
 		    				if(v.getValue().is_active() && !v.getValue().is_secure()){
-		    					System.out.println("The line: \"" + line + "\" is NOT SECURE.");
+		    					System.out.println("The line: \"" + line + "\" is NOT SECURE on the sink -" + s + "- for the type of vulnerability: " + v.getKey().toString() + " on file: " + phpFile);
 		    				}
 		    			}
 		    		}
