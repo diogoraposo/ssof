@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -12,11 +13,12 @@ public class Analyzer {
 
 	public static void main(String[] args) {
 		
-		boolean DEBUG = false;
+		boolean DEBUG = true;
 		
-		File patternsfile = new File(System.getProperty("user.dir") + "/src/braindeadanalyzer/patterns");
-		//File patternsfile = new File(System.getProperty("user.dir") + "/../src/braindeadanalyzer/patterns");
+		//File patternsfile = new File(System.getProperty("user.dir") + "/src/braindeadanalyzer/patterns");
+		File patternsfile = new File(System.getProperty("user.dir") + "/../src/braindeadanalyzer/patterns");
 		TreeMap<String, Vulnerability> vulns = new TreeMap<String, Vulnerability>();
+		ArrayList<String> dataFlow = new ArrayList<String>();
 		
 		//Read patterns file
 		try (BufferedReader br = new BufferedReader(new FileReader(patternsfile))) {
@@ -53,10 +55,31 @@ public class Analyzer {
 		try (BufferedReader br = new BufferedReader(new FileReader(phpFile))) {
 			String line;
 		    while ((line = br.readLine()) != null) {
+		    	if(line.contains("=")){
+		    		for(String s: dataFlow){
+		    			if(line.split("=")[1].contains(s)){
+		    				String tmp = line.split("=")[0].trim();
+		    				if(!dataFlow.contains(tmp)){
+		    					dataFlow.add(tmp);
+		    				}
+		    			}
+		    		}
+		    	}
 		    	for(Entry<String, Vulnerability> v : vulns.entrySet()){
 		    		for(String s: v.getValue().get_entryPoints()){
 		    			if(line.contains(s)){
 		    				v.getValue().set_active(true);
+		    				String[] members = line.split("=");
+		    				if(members.length > 1){
+		    					String entryPoint = members[0];
+		    					//if(DEBUG) System.out.println("Entry point is: " + entryPoint);
+		    					//entryPoint = entryPoint.replaceAll("\t", "");
+		    					//entryPoint = entryPoint.replaceAll(" ", "");
+		    					entryPoint = entryPoint.trim();
+		    					//if(DEBUG) System.out.println("Entry point is now: " + entryPoint);
+		    					if(!dataFlow.contains(entryPoint) && entryPoint.length()>0)
+		    						dataFlow.add(entryPoint);
+		    				}
 		    			}
 		    		}
 		    		for(String s: v.getValue().get_sanitFunctions()){
@@ -65,10 +88,24 @@ public class Analyzer {
 		    			}
 		    		}
 		    		for(String s: v.getValue().get_sensitiveSinks()){
-		    			if(line.contains(" " +  s + " ")){
-		    				if(v.getValue().is_active() && !v.getValue().is_secure()){
-		    					System.out.println("The line: \"" + line + "\" is NOT SECURE on the sink -" + s + "- for the type of vulnerability: " + v.getKey().toString() + " on file: " + phpFile);
-		    				}
+		    			for(String ss: dataFlow){
+							if (line.contains(" " + s + " ") && line.contains(ss)) {
+								if (v.getValue().is_active()
+										&& !v.getValue().is_secure()) {
+									System.out
+											.println("The line: \""
+													+ line
+													+ "\" is NOT SECURE on the sink -"
+													+ s
+													+ "- for the type of vulnerability: "
+													+ v.getKey().toString()
+													+ " on file: " + phpFile);
+									System.out.println("");
+									System.out.println("");
+									System.out
+											.println("---------------------------------------------------------");
+								}
+							}
 		    			}
 		    		}
 		    	}
@@ -81,6 +118,7 @@ public class Analyzer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		if(DEBUG) for(String ss: dataFlow) System.out.println("Entry point variable: " + ss);
 	}
 
 }
