@@ -54,17 +54,17 @@ public class Analyzer {
 		    while ((line = br.readLine()) != null) {
 		    	for(Entry<String, Vulnerability> v : vulns.entrySet()){
 		    		for(String s: v.getValue().get_entryPoints()){
-		    			if(line.equals(s)){
+		    			if(line.contains(s)){
 		    				v.getValue().set_active(true);
 		    			}
 		    		}
 		    		for(String s: v.getValue().get_sanitFunctions()){
-		    			if(line.equals(s)){
+		    			if(line.contains(s)){
 		    				v.getValue().set_secure(true);
 		    			}
 		    		}
 		    		for(String s: v.getValue().get_sensitiveSinks()){
-		    			if(line.equals(s)){
+		    			if(line.contains(s)){
 		    				if(v.getValue().is_active() && !v.getValue().is_secure()){
 		    					System.out.println("The line: \"" + line + "\" is NOT SECURE.");
 		    				}
